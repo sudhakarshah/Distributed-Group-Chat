@@ -21,8 +21,8 @@ type message struct {
 
 
 // fixed size array containing all the IP addresses
-// var IpAddress = [...]string {"172.22.94.77", "172.22.156.69", "172.22.158.69"}
-var IpAddress = [...]string {"localhost"}
+var IpAddress = [...]string {"172.22.94.77", "172.22.156.69", "172.22.158.69"}
+//var IpAddress = [...]string {"localhost"}
 var name string
 var wg sync.WaitGroup
 func main() {
