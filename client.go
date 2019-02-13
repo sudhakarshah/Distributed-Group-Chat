@@ -44,7 +44,7 @@ func main() {
 		}
 		// starting server to accept connection from all other nodes
 		wg.Add(1)
-		go server(port, numberOfParticipants-1)
+		go server(port, numberOfParticipants)
 		ownIp := get_own_ip()
 		fmt.Println(ownIp  + " this is my own ip")
 		count := 0
