@@ -7,12 +7,10 @@ import (
 		"bufio"
 		"strconv"
 		"sync"
-
 )
 
 const (
 		CONN_HOST = "0.0.0.0"
-		// CONN_PORT = "3333"
 		CONN_TYPE = "tcp"
 )
 
@@ -23,21 +21,16 @@ type message struct {
 
 
 // fixed size array containing all the IP addresses
-var IpAddress = [...]string {"172.22.94.77", "172.22.156.69", "172.22.158.69"}
-// var IpAddress = [...]string {"localhost"}
+// var IpAddress = [...]string {"172.22.94.77", "172.22.156.69", "172.22.158.69"}
+var IpAddress = [...]string {"localhost"}
 var name string
 var wg sync.WaitGroup
 func main() {
-		// argsWithProg := os.Args
 		arguments := os.Args[1:]
 		name = arguments[0]
 		port := arguments[1]
-		fmt.Println(name+ port)
-		numberOfParticipants, err := strconv.Atoi(arguments[2])
-		if (err != nil) {
+		numberOfParticipants, _ := strconv.Atoi(arguments[2])
 
-		}
-		// var chans [5]chan string
 		var chans = make([]chan string,numberOfParticipants)
 		for i := range chans {
 			chans[i] = make(chan string)
@@ -45,23 +38,19 @@ func main() {
 		// starting server to accept connection from all other nodes
 		wg.Add(1)
 		go server(port, numberOfParticipants)
-		ownIp := get_own_ip()
-		fmt.Println(ownIp  + " this is my own ip")
+
 		count := 0
-		for index, ip := range IpAddress {
-			if (index == numberOfParticipants) {
+		for _, ip := range IpAddress {
+			if (count == numberOfParticipants) {
 				break
 			}
-			// if (ownIp == ip) {
-			// 	continue
-			// }
 			wg.Add(1)
-			fmt.Println("creating routine for "+ ip)
+			fmt.Println("creating go routine for "+ ip)
 			go client(ip + ":" + port, chans[count])
 			count++
-
 		}
 
+		// waiting for all clients to connect and server to connect to all other nodes
 		wg.Wait()
 
 		// taking user input
@@ -73,7 +62,6 @@ func main() {
 			for _, c := range chans {
 				c <- text
 			}
-			// msg := message{name, text}
 		}
 
 
@@ -140,34 +128,9 @@ func client(address string, c chan string) {
 	for {
 		text := <- c
 		// read in input from stdin
-		// reader := bufio.NewReader(os.Stdin)
-		// fmt.Println("Text to send to "+ address)
-		// text, _ := reader.ReadString('\n')
 		msg := message{name, text}
 		// send to socket
 		fmt.Fprintf(conn, msg.name +": " + msg.data + "\n")
-		// listen for reply
-		// message, _ := bufio.NewReader(conn).ReadString('\n')
-		// fmt.Print("Message from server: "+message)
 	}
 
-}
-
-
-// function returns own IP
-func get_own_ip()string {
-	addrs, err := net.InterfaceAddrs()
-	if err != nil {
-		os.Stderr.WriteString("Oops: " + err.Error() + "\n")
-		os.Exit(1)
-	}
-
-	for _, a := range addrs {
-		if ipnet, ok := a.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
-			if ipnet.IP.To4() != nil {
-				return ipnet.IP.String()
-			}
-		}
-	}
-	return ""
 }
