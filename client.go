@@ -52,9 +52,9 @@ func main() {
 			if (index == numberOfParticipants) {
 				break
 			}
-			if (ownIp == ip) {
-				continue
-			}
+			// if (ownIp == ip) {
+			// 	continue
+			// }
 			wg.Add(1)
 			fmt.Println("creating routine for "+ ip)
 			go client(ip + ":" + port, chans[count])
