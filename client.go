@@ -17,16 +17,16 @@ const (
 )
 
 // fixed size array containing all the IP addresses
-var IpAddress = [...]string {"172.22.94.1", "172.22.156.1"}
+var IpAddress = [...]string {"172.22.94.77", "172.22.156.69"}
 // var IpAddress = [...]string {"localhost"}
 
 var wg sync.WaitGroup
 func main() {
 		// argsWithProg := os.Args
 		arguments := os.Args[1:]
-		// name := arguments[0]
+		name := arguments[0]
 		port := arguments[1]
-		fmt.Println(arguments[2]+"\n")
+		fmt.Println(name+ port)
 		numberOfParticipants, err := strconv.Atoi(arguments[2])
 		if (err!=nil) {
 
@@ -36,6 +36,7 @@ func main() {
 		wg.Add(1)
 		go server(port)
 		ownIp := get_own_ip()
+		fmt.Println(ownIp  + " this is my own ip")
 		for index, ip := range IpAddress {
 			if (index == numberOfParticipants) {
 				break
@@ -44,6 +45,7 @@ func main() {
 				continue
 			}
 			wg.Add(1)
+			fmt.Println("creating routine for "+ ip)
 			go client(ip + ":" + port)
 
 		}
@@ -62,6 +64,7 @@ func server(port string) {
 		defer l.Close()
 		fmt.Println("Listening on " + CONN_HOST + ":" + port)
 		for {
+				fmt.Println("Entered  for loop to listen")
 				// Listen for an incoming connection.
 				conn, err := l.Accept()
 				if err != nil {
@@ -77,6 +80,7 @@ func server(port string) {
 // Handles incoming requests.
 func handleRequest(conn net.Conn) {
 	// Make a buffer to hold incoming data.
+	fmt.Println("New connection added to server")
 	buf := make([]byte, 1024)
 	// Read the incoming connection into the buffer.
 	// reqLen, err := conn.Read(buf)
@@ -94,12 +98,20 @@ func handleRequest(conn net.Conn) {
 func client(address string) {
 
 	// connect to this socket
-	fmt.Println(address+"\n")
-	conn, _ := net.Dial("tcp", address)
+	fmt.Println(address+" routine created")
+	conn, err := net.Dial("tcp", address)
+
+	// loop till client can't connect to server
+	for err != nil {
+		fmt.Println("retryig connecting to server")
+		conn, err = net.Dial("tcp", address)
+		// can introduce some sleep here
+	}
+
 	for {
 		// read in input from stdin
 		reader := bufio.NewReader(os.Stdin)
-		fmt.Print("Text to send: ")
+		fmt.Println("Text to send to "+ address)
 		text, _ := reader.ReadString('\n')
 		// send to socket
 		fmt.Fprintf(conn, text + "\n")
