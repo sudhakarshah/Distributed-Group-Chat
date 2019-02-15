@@ -120,6 +120,8 @@ func handleRequest(conn net.Conn, chans []chan string) {
 		recLen, err := conn.Read(buf)
 		if err != nil {
 			fmt.Println("Error reading:", err.Error())
+			conn.Close()
+			return
 		}
 		text := string(buf[:int(recLen)])
 		words := strings.Fields(text)
