@@ -7,6 +7,8 @@ import (
 		"bufio"
 		"strconv"
 		"sync"
+		"time"
+		"strings"
 )
 
 const (
@@ -16,13 +18,15 @@ const (
 
 type message struct {
 	name string
+	// do describe the
+	// type string
 	data string
 }
 
 
 // fixed size array containing all the IP addresses
-var IpAddress = [...]string {"172.22.94.77", "172.22.156.69", "172.22.158.69"}
-//var IpAddress = [...]string {"localhost"}
+// var IpAddress = [...]string {"172.22.94.77", "172.22.156.69", "172.22.158.69"}
+var IpAddress = [...]string {"localhost"}
 var name string
 var wg sync.WaitGroup
 func main() {
@@ -37,7 +41,7 @@ func main() {
 		}
 		// starting server to accept connection from all other nodes
 		wg.Add(1)
-		go server(port, numberOfParticipants)
+		go server(port, numberOfParticipants, chans)
 
 		count := 0
 		for _, ip := range IpAddress {
@@ -47,6 +51,7 @@ func main() {
 			wg.Add(1)
 			fmt.Println("creating go routine for "+ ip)
 			go client(ip + ":" + port, chans[count])
+			//
 			count++
 		}
 
@@ -59,15 +64,20 @@ func main() {
 			fmt.Println("Text to send:")
 			text, _ := reader.ReadString('\n')
 			// sending to all the channels
+			t := time.Now().String()
+			t = strings.Join(strings.Fields(t),"")
+			fmt.Println(t)
+			text = t + " " + text
 			for _, c := range chans {
 				c <- text
+				time.Sleep(2 * time.Second)
 			}
 		}
 
 
 }
 
-func server(port string, connectionCount int) {
+func server(port string, connectionCount int, chans []chan string) {
 		fmt.Println("server\n")
 		// Listen for incoming connections.
 		l, err := net.Listen(CONN_TYPE, CONN_HOST+":"+port)
@@ -87,23 +97,37 @@ func server(port string, connectionCount int) {
 						os.Exit(1)
 				}
 				// Handle connections in a new goroutine.
-				go handleRequest(conn)
+				go handleRequest(conn, chans)
 		}
 		wg.Done()
 }
 
 // Handles incoming requests.
-func handleRequest(conn net.Conn) {
+func handleRequest(conn net.Conn, chans []chan string) {
 	// Make a buffer to hold incoming data.
 	fmt.Println("New connection added to server")
 	buf := make([]byte, 1024)
 	// Read the incoming connection into the buffer.
+	allMessages := make(map[string]string)
 	for {
+
 		recLen, err := conn.Read(buf)
 		if err != nil {
 			fmt.Println("Error reading:", err.Error())
 		}
-		fmt.Printf("received %v\n", string(buf[:int(recLen)]))
+		text := string(buf[:int(recLen)])
+		words := strings.Fields(text)
+		_, isOld := allMessages[words[0]]
+		// received for the first time hence send to all other servers
+		if (!isOld) {
+			for _, c := range chans {
+				c <- text
+			}
+			fmt.Printf("received %v\n", text)
+			// string(words[1] + " " + words[2])
+		}
+		allMessages[words[0]] = text
+
 		// Send a response back to person contacting us.
 		// conn.Write([]byte("Message received."))
 	}
@@ -127,10 +151,11 @@ func client(address string, c chan string) {
 	wg.Done()
 	for {
 		text := <- c
+		words := strings.Fields(text)
 		// read in input from stdin
-		msg := message{name, text}
+		// msg := message{name, text}
 		// send to socket
-		fmt.Fprintf(conn, msg.name +": " + msg.data + "\n")
+		fmt.Fprintf(conn, words[0]+ " " + name + ": " + words[1] + "\n")
 	}
 
 }
