@@ -67,10 +67,10 @@ func main() {
 			t := time.Now().String()
 			t = strings.Join(strings.Fields(t),"")
 			fmt.Println(t)
-			text = t + " " + text
+			text = t + " " + name + " " + text
 			for _, c := range chans {
 				c <- text
-				time.Sleep(2 * time.Second)
+				// time.Sleep(2 * time.Second)
 			}
 		}
 
@@ -103,12 +103,14 @@ func server(port string, connectionCount int, chans []chan string) {
 }
 
 // Handles incoming requests.
+var allMessages map[string]string = make(map[string]string)
+var mutex = &sync.Mutex{}
 func handleRequest(conn net.Conn, chans []chan string) {
 	// Make a buffer to hold incoming data.
 	fmt.Println("New connection added to server")
 	buf := make([]byte, 1024)
 	// Read the incoming connection into the buffer.
-	allMessages := make(map[string]string)
+
 	for {
 
 		recLen, err := conn.Read(buf)
@@ -117,6 +119,10 @@ func handleRequest(conn net.Conn, chans []chan string) {
 		}
 		text := string(buf[:int(recLen)])
 		words := strings.Fields(text)
+
+
+		// atomically checking and resending to everyone if new message
+		mutex.Lock()
 		_, isOld := allMessages[words[0]]
 		// received for the first time hence send to all other servers
 		if (!isOld) {
@@ -125,8 +131,10 @@ func handleRequest(conn net.Conn, chans []chan string) {
 			}
 			fmt.Printf("received %v\n", text)
 			// string(words[1] + " " + words[2])
+			allMessages[words[0]] = text
 		}
-		allMessages[words[0]] = text
+		mutex.Unlock()
+
 
 		// Send a response back to person contacting us.
 		// conn.Write([]byte("Message received."))
@@ -135,6 +143,7 @@ func handleRequest(conn net.Conn, chans []chan string) {
 	// Close the connection when you're done with it.
 	conn.Close()
 }
+
 
 func client(address string, c chan string) {
 
@@ -151,11 +160,11 @@ func client(address string, c chan string) {
 	wg.Done()
 	for {
 		text := <- c
-		words := strings.Fields(text)
+		// words := strings.Fields(text)
 		// read in input from stdin
 		// msg := message{name, text}
 		// send to socket
-		fmt.Fprintf(conn, words[0]+ " " + name + ": " + words[1] + "\n")
+		fmt.Fprintf(conn, text + "\n")
 	}
 
 }
