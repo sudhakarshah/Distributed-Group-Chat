@@ -29,6 +29,9 @@ var IpAddress = [...]string {"172.22.94.77", "172.22.156.69", "172.22.158.69"}
 // var IpAddress = [...]string {"localhost"}
 var name string
 var wg sync.WaitGroup
+var allMessages map[string]string = make(map[string]string)
+var ownMessages map[string]string = make(map[string]string)
+
 func main() {
 		arguments := os.Args[1:]
 		name = arguments[0]
@@ -68,6 +71,7 @@ func main() {
 			t = strings.Join(strings.Fields(t),"")
 			fmt.Println(t)
 			text = t + " " + name + " " + text
+			ownMessages[t] = text
 			for _, c := range chans {
 				c <- text
 				// time.Sleep(2 * time.Second)
@@ -103,7 +107,7 @@ func server(port string, connectionCount int, chans []chan string) {
 }
 
 // Handles incoming requests.
-var allMessages map[string]string = make(map[string]string)
+
 var mutex = &sync.Mutex{}
 func handleRequest(conn net.Conn, chans []chan string) {
 	// Make a buffer to hold incoming data.
@@ -124,11 +128,15 @@ func handleRequest(conn net.Conn, chans []chan string) {
 		// atomically checking and resending to everyone if new message
 		mutex.Lock()
 		_, isOld := allMessages[words[0]]
+		_, isMyOld := ownMessages[words[0]]
 		// received for the first time hence send to all other servers
-		if (!isOld) {
+		if (!isOld && !isMyOld) {
 			for _, c := range chans {
 				c <- text
 			}
+
+		}
+		if(!isOld) {
 			fmt.Printf("received %v\n", text)
 			// string(words[1] + " " + words[2])
 			allMessages[words[0]] = text
