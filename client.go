@@ -30,7 +30,7 @@ type connection struct {
 	name string
 }
 // fixed size array containing all the IP addresses
-var IpAddress = [...]string {"172.22.94.77", "172.22.156.69", "172.22.158.69"}
+var IpAddress = [...]string {"172.22.94.77", "172.22.156.69", "172.22.158.69", "172.22.94.1", "172.22.156.1", "172.22.158.1"}
 // var IpAddress = [...]string {"localhost"}
 var name string
 var wg sync.WaitGroup
@@ -184,7 +184,7 @@ func client(address string, c chan string) {
 		conn, err = net.Dial("tcp", address)
 		// can introduce some sleep here
 	}
-	fmt.Fprintf(conn, name + "\n")
+	fmt.Fprintf(conn, name)
 	wg.Done()
 	for {
 		text := <- c
@@ -192,7 +192,7 @@ func client(address string, c chan string) {
 		// read in input from stdin
 		// msg := message{name, text}
 		// send to socket
-		fmt.Fprintf(conn, text + "\n")
+		fmt.Fprintf(conn, text)
 	}
 
 }
