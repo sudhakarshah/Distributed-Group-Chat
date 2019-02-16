@@ -30,7 +30,7 @@ type connection struct {
 	name string
 }
 // fixed size array containing all the IP addresses
-var IpAddress = [...]string {"172.22.94.77", "172.22.156.69", "172.22.158.69", "172.22.94.1", "172.22.156.1", "172.22.158.1"}
+var IpAddress = [...]string {"172.22.94.77", "172.22.156.69", "172.22.158.69", "172.22.95.255", "172.22.157.255", "172.22.159.255"}
 // var IpAddress = [...]string {"localhost"}
 var name string
 var wg sync.WaitGroup
