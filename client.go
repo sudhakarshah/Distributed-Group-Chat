@@ -23,7 +23,12 @@ type message struct {
 	data string
 }
 
-
+type connection struct {
+	conn net.Conn
+	// do describe the
+	// type string
+	name string
+}
 // fixed size array containing all the IP addresses
 var IpAddress = [...]string {"172.22.94.77", "172.22.156.69", "172.22.158.69"}
 // var IpAddress = [...]string {"localhost"}
@@ -95,11 +100,23 @@ func server(port string, connectionCount int, chans []chan string) {
 		for i :=0; i<connectionCount; i++ {
 				fmt.Println("Entered  for loop to listen")
 				// Listen for an incoming connection.
-				conn, err := l.Accept()
+				conn := connection{}
+				var err error
+				conn.conn, err = l.Accept()
 				if err != nil {
 						fmt.Println("Error accepting: ", err.Error())
 						os.Exit(1)
 				}
+
+				// receiving name
+				buf := make([]byte, 1024)
+				recLen, er := conn.conn.Read(buf)
+				if er != nil {
+					fmt.Println("name reading error", err.Error())
+					conn.conn.Close()
+					return
+				}
+				conn.name = string(buf[:int(recLen)])
 				// Handle connections in a new goroutine.
 				go handleRequest(conn, chans)
 		}
@@ -109,18 +126,18 @@ func server(port string, connectionCount int, chans []chan string) {
 // Handles incoming requests.
 
 var mutex = &sync.Mutex{}
-func handleRequest(conn net.Conn, chans []chan string) {
+func handleRequest(conn connection, chans []chan string) {
 	// Make a buffer to hold incoming data.
-	fmt.Println("New connection added to server")
+	fmt.Println("New connection added to server with: "+ conn.name)
 	buf := make([]byte, 1024)
 	// Read the incoming connection into the buffer.
 
 	for {
 
-		recLen, err := conn.Read(buf)
+		recLen, err := conn.conn.Read(buf)
 		if err != nil {
-			fmt.Println("Error reading:", err.Error())
-			conn.Close()
+			fmt.Println(conn.name + " has left")
+			conn.conn.Close()
 			return
 		}
 		text := string(buf[:int(recLen)])
@@ -151,7 +168,7 @@ func handleRequest(conn net.Conn, chans []chan string) {
 	}
 
 	// Close the connection when you're done with it.
-	conn.Close()
+	conn.conn.Close()
 }
 
 
@@ -167,6 +184,7 @@ func client(address string, c chan string) {
 		conn, err = net.Dial("tcp", address)
 		// can introduce some sleep here
 	}
+	fmt.Fprintf(conn, name + "\n")
 	wg.Done()
 	for {
 		text := <- c
