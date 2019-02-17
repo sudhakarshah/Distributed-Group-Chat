@@ -9,6 +9,7 @@ import (
 		"sync"
 		"time"
 		"strings"
+		"bytes"
 		"container/ring"
 )
 
