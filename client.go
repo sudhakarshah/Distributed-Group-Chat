@@ -54,7 +54,6 @@ func main() {
 		count := 0
 		for _, ip := range IpAddress {
 			if (count == numberOfParticipants) {
-				fmt.Println("READY")
 				break
 			}
 			wg.Add(1)
@@ -65,7 +64,7 @@ func main() {
 
 		// waiting for all clients to connect and server to connect to all other nodes
 		wg.Wait()
-
+		fmt.Println("READY")
 		// taking user input
 		for {
 			reader := bufio.NewReader(os.Stdin)
@@ -74,8 +73,8 @@ func main() {
 			// sending to all the channels
 			t := time.Now().String()
 			t = strings.Join(strings.Fields(t),"")
-			fmt.Println(t)
-			text = t + " " + name + " " + text
+			//fmt.Println(t)
+			text = t + " " + name + ": " + text
 			ownMessages[t] = text
 			for _, c := range chans {
 				c <- text
@@ -156,7 +155,7 @@ func handleRequest(conn connection, chans []chan string) {
 
 		}
 		if(!isOld) {
-			fmt.Printf("%v\n", text)
+			fmt.Printf("%v\n", text[51:])
 			// string(words[1] + " " + words[2])
 			allMessages[words[0]] = text
 		}
