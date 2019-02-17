@@ -9,6 +9,7 @@ import (
 		"sync"
 		"time"
 		"strings"
+		"container/ring"
 )
 
 const (
@@ -33,8 +34,7 @@ type connection struct {
 var IpAddress = [...]string {"172.22.94.77", "172.22.156.69", "172.22.158.69", 
 							"172.22.94.78", "172.22.156.70", "172.22.158.70",
 							"172.22.94.79", "172.22.156.71", "172.22.158.71",
-							"172.22.94.80",
-							"172.22.95.255", "172.22.157.255", "172.22.159.255"}
+							"172.22.94.80"}
 // var IpAddress = [...]string {"localhost"}
 var name string
 var wg sync.WaitGroup
@@ -55,20 +55,33 @@ func main() {
 		wg.Add(1)
 		go server(port, numberOfParticipants, chans)
 
-		count := 0
-		for _, ip := range IpAddress {
-			if (count == numberOfParticipants) {
-				break
-			}
-			wg.Add(1)
-			//fmt.Println("creating go routine for "+ ip)
-			go client(ip + ":" + port, chans[count])
-			count++
+		
+		num_ips := len(IpAddress)
+		IpRing := ring.New(num_ips)
+
+		// initialize ring
+		for itr := 0; itr < num_ips; itr++ {
+			IpRing.Value = IpAddress[itr]
+			IpRing = IpRing.Next()
 		}
 
-		// waiting for all clients to connect and server to connect to all other nodes
-		wg.Wait()
-		fmt.Println("READY")
+		// Keep iterate through Ip ring
+		count := 0
+		for {
+			if (count >= numberOfParticipants) {
+				fmt.Println("READY")
+				break
+			}
+			ip := IpRing.Value
+			conn, err := net.Dial("tcp", ip.(string))
+			if err == nil {
+				//fmt.Println("creating go routine for "+ ip)
+				go client(conn, chans[count])
+				count++
+			}
+			IpRing = IpRing.Next()
+		}
+		
 		// taking user input
 		for {
 			reader := bufio.NewReader(os.Stdin)
@@ -176,20 +189,9 @@ func handleRequest(conn connection, chans []chan string) {
 }
 
 
-func client(address string, c chan string) {
+func client(conn net.Conn, c chan string) {
 
-	// connect to this socket
-	//fmt.Println(address+" routine created")
-	conn, err := net.Dial("tcp", address)
-
-	// loop till client can't connect to server
-	for err != nil {
-		// fmt.Println("retryig connecting to server")
-		conn, err = net.Dial("tcp", address)
-		// can introduce some sleep here
-	}
 	fmt.Fprintf(conn, name)
-	wg.Done()
 	for {
 		text := <- c
 		// words := strings.Fields(text)
