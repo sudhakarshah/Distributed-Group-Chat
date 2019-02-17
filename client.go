@@ -11,7 +11,6 @@ import (
 		"strings"
 		"bytes"
 		"container/ring"
-		"math"
 )
 
 const (
