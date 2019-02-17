@@ -42,8 +42,8 @@ var wg sync.WaitGroup
 var allMessages map[string]string = make(map[string]string)
 var ownMessages map[string]string = make(map[string]string)
 // initialize timestamp to all zeros
-var VecTimestamp map[int]int
-var vm_num int
+var VecTimestamp map[string]int
+var vm_num string
 
 func main() {
 		arguments := os.Args[1:]
@@ -60,9 +60,9 @@ func main() {
 		}
 
 		// from hostname we can extract VM number
-		vm_num, _ = strconv.Atoi(hostname[15:17])
+		vm_num = hostname[15:17]
 
-		VecTimestamp = make(map[int]int, numberOfParticipants)
+		VecTimestamp = make(map[string]int, numberOfParticipants)
 
 		var chans = make([]chan string,numberOfParticipants)
 		for i := range chans {
@@ -94,6 +94,8 @@ func main() {
 			address := ip.(string) + ":" + port
 			conn, err := net.Dial("tcp", address)
 			if err == nil {
+				addr, _ := net.LookupAddr(ip.(string))
+				VecTimestamp[addr[0][15:17]] = 0
 				go client(conn, chans[count])
 				IpRing = IpRing.Prev()
 				IpRing.Unlink(1)
@@ -127,20 +129,20 @@ func main() {
 
 }
 
-func map_to_str(m map[int]int) string {
+func map_to_str(m map[string]int) string {
 	b := new(bytes.Buffer)
 	for key, val := range m {
-		fmt.Fprintf(b, "%d=\"%d\";", key, val)
+		fmt.Fprintf(b, "%s=\"%d\";", key, val)
 	}
 	return b.String()
 }
 
-func str_to_map(s string) map[int]int {
+func str_to_map(s string) map[string]int {
 	elems := strings.Split(s, ";")
-	m := make(map[int]int, len(elems))
-	for _, elem := range elems {
-		key_val := strings.Split(elem, ":")
-		key, _ := strconv.Atoi(key_val[0])
+	m := make(map[string]int, len(elems)-1)
+	for _, elem := range elems[:len(elems)-1] {
+		key_val := strings.Split(elem, "=")
+		key := key_val[0]
 		val, _ := strconv.Atoi(key_val[1])
 		m[key] = val
 	}
