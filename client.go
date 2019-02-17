@@ -222,6 +222,7 @@ func handleRequest(conn connection, chans []chan string) {
 		mutex.Lock()
 		_, isOld := allMessages[words[0]]
 		_, isMyOld := ownMessages[words[0]]
+		text = words[0] + " " + map_to_str(VecTimestamp) + " " + strings.Join(words[2:], " ")
 		// received for the first time hence send to all other servers
 		if (!isOld && !isMyOld) {
 			for _, c := range chans {
