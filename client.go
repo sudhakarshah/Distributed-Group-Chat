@@ -54,12 +54,12 @@ func main() {
 		count := 0
 		for _, ip := range IpAddress {
 			if (count == numberOfParticipants) {
+				fmt.Println("READY")
 				break
 			}
 			wg.Add(1)
-			fmt.Println("creating go routine for "+ ip)
+			//fmt.Println("creating go routine for "+ ip)
 			go client(ip + ":" + port, chans[count])
-			//
 			count++
 		}
 
@@ -69,7 +69,7 @@ func main() {
 		// taking user input
 		for {
 			reader := bufio.NewReader(os.Stdin)
-			fmt.Println("Text to send:")
+			//fmt.Println("Text to send:")
 			text, _ := reader.ReadString('\n')
 			// sending to all the channels
 			t := time.Now().String()
@@ -87,7 +87,7 @@ func main() {
 }
 
 func server(port string, connectionCount int, chans []chan string) {
-		fmt.Println("server\n")
+		//fmt.Println("server\n")
 		// Listen for incoming connections.
 		l, err := net.Listen(CONN_TYPE, CONN_HOST+":"+port)
 		if err != nil {
@@ -96,9 +96,9 @@ func server(port string, connectionCount int, chans []chan string) {
 		}
 		// Close the listener when the application closes.
 		defer l.Close()
-		fmt.Println("Listening on " + CONN_HOST + ":" + port)
+		//fmt.Println("Listening on " + CONN_HOST + ":" + port)
 		for i :=0; i<connectionCount; i++ {
-				fmt.Println("Entered  for loop to listen")
+				//fmt.Println("Entered  for loop to listen")
 				// Listen for an incoming connection.
 				conn := connection{}
 				var err error
@@ -128,7 +128,7 @@ func server(port string, connectionCount int, chans []chan string) {
 var mutex = &sync.Mutex{}
 func handleRequest(conn connection, chans []chan string) {
 	// Make a buffer to hold incoming data.
-	fmt.Println("New connection added to server with: "+ conn.name)
+	//fmt.Println("New connection added to server with: "+ conn.name)
 	buf := make([]byte, 1024)
 	// Read the incoming connection into the buffer.
 
@@ -156,7 +156,7 @@ func handleRequest(conn connection, chans []chan string) {
 
 		}
 		if(!isOld) {
-			fmt.Printf("received %v\n", text)
+			fmt.Printf("%v\n", text)
 			// string(words[1] + " " + words[2])
 			allMessages[words[0]] = text
 		}
@@ -175,7 +175,7 @@ func handleRequest(conn connection, chans []chan string) {
 func client(address string, c chan string) {
 
 	// connect to this socket
-	fmt.Println(address+" routine created")
+	//fmt.Println(address+" routine created")
 	conn, err := net.Dial("tcp", address)
 
 	// loop till client can't connect to server
