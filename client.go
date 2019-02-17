@@ -11,6 +11,7 @@ import (
 		"strings"
 		"bytes"
 		"container/ring"
+		"math"
 )
 
 const (
@@ -260,8 +261,25 @@ func now_or_later(s string) bool {
 		} 
 	}
 
+	update_timestamps(m)
+
 	return true
 
+}
+
+func update_timestamps(m map[string]int) {
+	// update own value because receive is an event
+	VecTimestamp[vm_num]++
+
+	// update others values
+	for key, value := range m {
+		if (key == vm_num) {
+			continue
+		}
+
+		VecTimestamp[key] = math.Max(VecTimestamp[key], value)
+	}
+	
 }
 
 func client(conn net.Conn, c chan string) {
