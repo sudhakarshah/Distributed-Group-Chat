@@ -40,12 +40,28 @@ var name string
 var wg sync.WaitGroup
 var allMessages map[string]string = make(map[string]string)
 var ownMessages map[string]string = make(map[string]string)
+// initialize timestamp to all zeros
+var VecTimestamp map[int]int
+var vm_num int
 
 func main() {
 		arguments := os.Args[1:]
 		name = arguments[0]
 		port := arguments[1]
 		numberOfParticipants, _ := strconv.Atoi(arguments[2])
+	
+		// we need hostname for figuring out what our index 
+		// in the vector timestamp is
+		hostname, err := os.Hostname()
+		if err != nil {
+			panic(err)
+			os.Exit(1)
+		}
+
+		// from hostname we can extract VM number
+		vm_num, _ = strconv.Atoi(hostname[15:17])
+
+		VecTimestamp = make(map[int]int, numberOfParticipants)
 
 		var chans = make([]chan string,numberOfParticipants)
 		for i := range chans {
@@ -94,8 +110,12 @@ func main() {
 			// sending to all the channels
 			t := time.Now().String()
 			t = strings.Join(strings.Fields(t),"")
-			//fmt.Println(t)
-			text = t + " " + name + ": " + text
+			// Increment timestamp of current process 
+			// TODO: Is this the best place to increment timestamp for send?
+			VecTimestamp[vm_num]++
+			timestamp_str := map_to_str(VecTimestamp)
+
+			text = t + " " + timestamp_str + " " + name + ": " + text
 			ownMessages[t] = text
 			for _, c := range chans {
 				c <- text
@@ -104,6 +124,26 @@ func main() {
 		}
 
 
+}
+
+func map_to_str(m map[int]int) string {
+	b := new(bytes.Buffer)
+	for key, val := range m {
+		fmt.Fprintf(b, "%d=\"%d\";", key, val)
+	}
+	return b.String()
+}
+
+func str_to_map(s string) map[int]int {
+	elems := strings.Split(s, ";")
+	m := make(map[int]int, len(elems))
+	for _, elem := range elems {
+		key_val := strings.Split(elem, ":")
+		key, _ := strconv.Atoi(key_val[0])
+		val, _ := strconv.Atoi(key_val[1])
+		m[key] = val
+	}
+	return m
 }
 
 func server(port string, connectionCount int, chans []chan string) {
@@ -162,6 +202,17 @@ func handleRequest(conn connection, chans []chan string) {
 		}
 		text := string(buf[:int(recLen)])
 		words := strings.Fields(text)
+		
+		// decide whether to keep this message or to put it in hold-back queue
+		keep := now_or_later(words[1])
+
+		if keep {
+			fmt.Println("do the usual shit")
+		} else {
+			fmt.Println("Put it away for later")
+			// implement hold back queue
+		}
+
 
 
 		// atomically checking and resending to everyone if new message
@@ -192,6 +243,23 @@ func handleRequest(conn connection, chans []chan string) {
 	conn.conn.Close()
 }
 
+func now_or_later(s string) bool {
+	m := str_to_map(s)
+
+
+	if m[vm_num] != (VecTimestamp[vm_num] + 1) {
+		return false
+	}
+	
+	for key, val := range m {
+		if ((key != vm_num) && (val > VecTimestamp[key])) {
+			return false
+		} 
+	}
+
+	return true
+
+}
 
 func client(conn net.Conn, c chan string) {
 
