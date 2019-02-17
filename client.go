@@ -132,7 +132,7 @@ func main() {
 func map_to_str(m map[string]int) string {
 	b := new(bytes.Buffer)
 	for key, val := range m {
-		fmt.Fprintf(b, "%s=\"%d\";", key, val)
+		fmt.Fprintf(b, "%s=%d;", key, val)
 	}
 	return b.String()
 }
