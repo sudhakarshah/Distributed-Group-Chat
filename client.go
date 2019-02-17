@@ -68,19 +68,23 @@ func main() {
 		// Keep iterate through Ip ring
 		count := 0
 		for {
+
 			if (count >= numberOfParticipants) {
 				fmt.Println("READY")
 				break
 			}
 			ip := IpRing.Value
-			conn, err := net.Dial("tcp", ip.(string))
+			address := ip.(string) + ":" + port
+			conn, err := net.Dial("tcp", address)
 			if err == nil {
-				//fmt.Println("creating go routine for "+ ip)
 				go client(conn, chans[count])
+				IpRing = IpRing.Prev()
+				IpRing.Unlink(1)
 				count++
-			}
+			} 
 			IpRing = IpRing.Next()
 		}
+		
 		
 		// taking user input
 		for {
