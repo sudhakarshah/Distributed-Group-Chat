@@ -277,7 +277,9 @@ func update_timestamps(m map[string]int) {
 			continue
 		}
 
-		VecTimestamp[key] = math.Max(VecTimestamp[key], value)
+		if VecTimestamp[key] < value {
+			VecTimestamp[key] = value
+		}
 	}
 	
 }
