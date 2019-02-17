@@ -155,8 +155,9 @@ func handleRequest(conn connection, chans []chan string) {
 
 		}
 		if(!isOld) {
-			fmt.Printf("%v\n", text[51:])
-			// string(words[1] + " " + words[2])
+			msg := strings.Join(words[2:], " ")
+			fmt.Print(words[1] + " ")
+			fmt.Printf("%v\n", msg);
 			allMessages[words[0]] = text
 		}
 		mutex.Unlock()
