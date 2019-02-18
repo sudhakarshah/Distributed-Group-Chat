@@ -241,6 +241,9 @@ func handleRequest(conn connection, chans []chan string) {
 			// so i will increment by timestamp
 			m := str_to_map(words[1])
 			update_timestamps(m)
+			fmt.Println("Printing vector timestamp after we receive a message")
+			fmt.Println(map_to_str(VecTimestamp))
+			fmt.Println("The above was the vector timestamp after we received the message")
 
 			keep := now_or_later(m)
 
