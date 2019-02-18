@@ -206,41 +206,59 @@ func handleRequest(conn connection, chans []chan string) {
 		text := string(buf[:int(recLen)])
 		words := strings.Fields(text)
 		
-		// decide whether to keep this message or to put it in hold-back queue
-		keep := now_or_later(words[1])
-
-		if keep {
-			fmt.Println("do the usual shit")
-		} else {
-			fmt.Println("Put it away for later")
-			// implement hold back queue
-		}
-
-
 
 		// atomically checking and resending to everyone if new message
 		mutex.Lock()
+
 		_, isOld := allMessages[words[0]]
 		_, isMyOld := ownMessages[words[0]]
-		text = words[0] + " " + map_to_str(VecTimestamp) + " " + strings.Join(words[2:], " ")
-		// received for the first time hence send to all other servers
-		if (!isOld && !isMyOld) {
-			for _, c := range chans {
-				c <- text
-			}
 
-		}
-		if(!isOld) {
+		// This may or may not be necessary, since when we receive this text, 
+		// especially for own messages
+
+		// will have to figure out where we need to query the hold back queue messages at
+
+		if (isMyOld && (!isOld)) {
+			// this is a message I just sent
 			msg := strings.Join(words[2:], " ")
 			fmt.Print(words[1] + " ")
 			fmt.Printf("%v\n", msg);
 			allMessages[words[0]] = text
+		} else if (isMyOld && isOld) {
+			// do nothing, it is my own message
+			// and it has already been displayed
+			// now it has been sent to me again, and i really don't care about this
+		} else if ((!isMyOld) && (!isOld) ) {
+			// this message has never been sent by me
+			// it has also never been sent by anyone else to me
+			// this is the first time i am actually receiveing this
+			// so i need to figure out if i should keep this message or put it in a holdback queue
+			keep := now_or_later(words[1])
+
+			if keep {
+				fmt.Println("do the usual shit")
+				// I have decided to keep this message
+				// so I will have to print it and add it to my list of all messages
+				// received for the first time hence send to all other servers
+				text = words[0] + " " + map_to_str(VecTimestamp) + " " + strings.Join(words[2:], " ")
+				for _, c := range chans {
+					c <- text
+				}
+				allMessages[words[0]] = text
+
+			} else {
+				fmt.Println("Put it away for later")
+				// I have decided to put it away for later
+				// I will deal with this later
+				// implement hold back queue
+			}
+		} else {
+			// this is not my old message but it is still an old message
+			// that is fine, it has been already dealt with 
+			// so we do nothing
 		}
-		mutex.Unlock()
 
-
-		// Send a response back to person contacting us.
-		// conn.Write([]byte("Message received."))
+		mutex.Unlock()	
 	}
 
 	// Close the connection when you're done with it.
@@ -261,8 +279,10 @@ func now_or_later(s string) bool {
 		} 
 	}
 
+	// only update timestamps with a message if 
+	// you are going to use it
+	// TODO: this is hella dubious, so test it hard
 	update_timestamps(m)
-
 	return true
 
 }
