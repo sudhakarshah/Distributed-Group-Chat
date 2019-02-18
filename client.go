@@ -252,9 +252,10 @@ func handleRequest(conn connection, chans []chan string) {
 				// I have decided to keep this message
 				// so I will have to print it and add it to my list of all messages
 				// received for the first time hence send to all other servers
-				text = words[0] + " " + map_to_str(VecTimestamp) + " " + strings.Join(words[2:], " ")
+				vec_timestamp_str := map_to_str(VecTimestamp) 
 				msg := strings.Join(words[2:], " ")
-				fmt.Print(words[1] + " ")
+				text = words[0] + " " + vec_timestamp_str + " " + msg
+				fmt.Print(vec_timestamp_str + " ")
 				fmt.Printf("%v\n", msg);
 				allMessages[words[0]] = text
 				for _, c := range chans {
@@ -283,7 +284,6 @@ func handleRequest(conn connection, chans []chan string) {
 func now_or_later(m map[string]int) bool {
 
 	if VecTimestamp[vm_num] != (m[vm_num] + 1) {
-		fmt.Println("im dying!")
 		return false
 	}
 	
