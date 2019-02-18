@@ -229,10 +229,10 @@ func handleRequest(conn connection, chans []chan string) {
 			// so i will increment by timestamp
 			m := str_to_map(words[1])
 			update_timestamps(m)
-			keep = now_or_later(m)
+			//keep = now_or_later(m)
 
 			if keep {
-				fmt.Println("do the usual shit")
+				//fmt.Println("do the usual shit")
 				// I have decided to keep this message
 				// so I will have to print it and add it to my list of all messages
 				// received for the first time hence send to all other servers
