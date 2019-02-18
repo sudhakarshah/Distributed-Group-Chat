@@ -236,6 +236,11 @@ func handleRequest(conn connection, chans []chan string) {
 			// it has also never been sent by anyone else to me
 			// this is the first time i am actually receiveing this
 			// so i need to figure out if i should keep this message or put it in a holdback queue
+
+			// since this is the first time im receiving it, it is an event
+			// so i will increment by timestamp
+			VecTimestamp[vm_num]++
+
 			keep := now_or_later(words[1])
 
 			if keep {
@@ -273,7 +278,6 @@ func handleRequest(conn connection, chans []chan string) {
 
 func now_or_later(s string) bool {
 	m := str_to_map(s)
-
 
 	if m[vm_num] != (VecTimestamp[vm_num] + 1) {
 		return false
