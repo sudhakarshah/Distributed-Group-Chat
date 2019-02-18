@@ -224,6 +224,9 @@ func handleRequest(conn connection, chans []chan string) {
 			fmt.Print(words[1] + " ")
 			fmt.Printf("%v\n", msg);
 			allMessages[words[0]] = text
+			for _, c := range chans {
+				c <- text
+			}
 		} else if (isMyOld && isOld) {
 			// do nothing, it is my own message
 			// and it has already been displayed
@@ -241,10 +244,13 @@ func handleRequest(conn connection, chans []chan string) {
 				// so I will have to print it and add it to my list of all messages
 				// received for the first time hence send to all other servers
 				text = words[0] + " " + map_to_str(VecTimestamp) + " " + strings.Join(words[2:], " ")
+				msg := strings.Join(words[2:], " ")
+				fmt.Print(words[1] + " ")
+				fmt.Printf("%v\n", msg);
+				allMessages[words[0]] = text
 				for _, c := range chans {
 					c <- text
-				}
-				allMessages[words[0]] = text
+				}				
 
 			} else {
 				fmt.Println("Put it away for later")
