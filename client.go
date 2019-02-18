@@ -232,7 +232,7 @@ func handleRequest(conn connection, chans []chan string) {
 			keep = now_or_later(m)
 
 			if keep {
-				fmt.Println("do the usual shit")
+				//fmt.Println("do the usual shit")
 				// I have decided to keep this message
 				// so I will have to print it and add it to my list of all messages
 				// received for the first time hence send to all other servers
@@ -242,7 +242,7 @@ func handleRequest(conn connection, chans []chan string) {
 				}				
 
 			} else {
-				fmt.Println("Put it away for later")
+				//fmt.Println("Put it away for later")
 				// I have decided to put it away for later
 				// I will deal with this later
 				// implement hold back queue
@@ -259,60 +259,6 @@ func handleRequest(conn connection, chans []chan string) {
 			allMessages[words[0]] = text
 
 		}
-
-
-
-		// if (isMyOld && (!isOld)) {
-		// 	// this is a message I just sent
-		// 	fmt.Println("zirconium")
-		// 	msg := strings.Join(words[2:], " ")
-		// 	fmt.Print(words[1] + " ")
-		// 	fmt.Printf("%v\n", msg);
-		// 	allMessages[words[0]] = text
-		// } else if (isMyOld && isOld) {
-		// 	// do nothing, it is my own message
-		// 	// and it has already been displayed
-		// 	// now it has been sent to me again, and i really don't care about this
-		// } else if ((!isMyOld) && (!isOld) ) {
-		// 	// this message has never been sent by me
-		// 	// it has also never been sent by anyone else to me
-		// 	// this is the first time i am actually receiveing this
-		// 	// so i need to figure out if i should keep this message or put it in a holdback queue
-
-		// 	// since this is the first time im receiving it, it is an event
-		// 	// so i will increment by timestamp
-		// 	fmt.Println("alexa is my bitch")
-		// 	m := str_to_map(words[1])
-		// 	update_timestamps(m)
-
-		// 	keep := now_or_later(m)
-
-		// 	if keep {
-		// 		fmt.Println("do the usual shit")
-		// 		// I have decided to keep this message
-		// 		// so I will have to print it and add it to my list of all messages
-		// 		// received for the first time hence send to all other servers
-		// 		vec_timestamp_str := map_to_str(VecTimestamp) 
-		// 		msg := strings.Join(words[2:], " ")
-		// 		text = words[0] + " " + vec_timestamp_str + " " + msg
-		// 		fmt.Print(vec_timestamp_str + " ")
-		// 		fmt.Printf("%v\n", msg);
-		// 		allMessages[words[0]] = text
-		// 		for _, c := range chans {
-		// 			c <- text
-		// 		}				
-
-		// 	} else {
-		// 		fmt.Println("Put it away for later")
-		// 		// I have decided to put it away for later
-		// 		// I will deal with this later
-		// 		// implement hold back queue
-		// 	}
-		// } else {
-		// 	// this is not my old message but it is still an old message
-		// 	// that is fine, it has been already dealt with 
-		// 	// so we do nothing
-		// }
 
 		mutex.Unlock()	
 	}
