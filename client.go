@@ -220,6 +220,7 @@ func handleRequest(conn connection, chans []chan string) {
 
 		if (isMyOld && (!isOld)) {
 			// this is a message I just sent
+			fmt.Println("zirconium")
 			msg := strings.Join(words[2:], " ")
 			fmt.Print(words[1] + " ")
 			fmt.Printf("%v\n", msg);
@@ -239,11 +240,9 @@ func handleRequest(conn connection, chans []chan string) {
 
 			// since this is the first time im receiving it, it is an event
 			// so i will increment by timestamp
+			fmt.Println("alexa is my bitch")
 			m := str_to_map(words[1])
 			update_timestamps(m)
-			fmt.Println("Printing vector timestamp after we receive a message")
-			fmt.Println(map_to_str(VecTimestamp))
-			fmt.Println("The above was the vector timestamp after we received the message")
 
 			keep := now_or_later(m)
 
@@ -314,7 +313,6 @@ func update_timestamps(m map[string]int) {
 			VecTimestamp[key] = value
 		}
 	}
-	
 }
 
 func client(conn net.Conn, c chan string) {
