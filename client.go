@@ -232,7 +232,7 @@ func handleRequest(conn connection, chans []chan string) {
 			keep = now_or_later(m)
 
 			if keep {
-				//fmt.Println("do the usual shit")
+				fmt.Println("do the usual shit")
 				// I have decided to keep this message
 				// so I will have to print it and add it to my list of all messages
 				// received for the first time hence send to all other servers
@@ -242,7 +242,7 @@ func handleRequest(conn connection, chans []chan string) {
 				}				
 
 			} else {
-				//fmt.Println("Put it away for later")
+				fmt.Println("Put it away for later")
 				// I have decided to put it away for later
 				// I will deal with this later
 				// implement hold back queue
@@ -270,11 +270,13 @@ func handleRequest(conn connection, chans []chan string) {
 func now_or_later(m map[string]int) bool {
 
 	if VecTimestamp[vm_num] != (m[vm_num] + 1) {
+		fmt.Println("basic check failed")
 		return false
 	}
 	
 	for key, val := range m {
 		if ((key != vm_num) && (val > VecTimestamp[key])) {
+			fmt.Println("something internal failed")
 			return false
 		} 
 	}
