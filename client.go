@@ -282,7 +282,7 @@ func handleRequest(conn connection, chans []chan string) {
 
 func now_or_later(m map[string]int) bool {
 
-	if m[vm_num] != (VecTimestamp[vm_num] + 1) {
+	if VecTimestamp[vm_num] != (m[vm_num] + 1) {
 		fmt.Println("im dying!")
 		return false
 	}
