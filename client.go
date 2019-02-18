@@ -204,7 +204,6 @@ func handleRequest(conn connection, chans []chan string) {
 			return
 		}
 		text := string(buf[:int(recLen)])
-		fmt.Println(text)
 		words := strings.Fields(text)
 		
 		// decide whether to keep this message or to put it in hold-back queue
@@ -253,13 +252,11 @@ func now_or_later(s string) bool {
 
 
 	if m[vm_num] != (VecTimestamp[vm_num] + 1) {
-		update_timestamps(m)
 		return false
 	}
 	
 	for key, val := range m {
 		if ((key != vm_num) && (val > VecTimestamp[key])) {
-			update_timestamps(m)
 			return false
 		} 
 	}
