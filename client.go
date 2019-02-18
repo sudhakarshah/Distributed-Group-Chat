@@ -239,9 +239,10 @@ func handleRequest(conn connection, chans []chan string) {
 
 			// since this is the first time im receiving it, it is an event
 			// so i will increment by timestamp
-			VecTimestamp[vm_num]++
+			m := str_to_map(words[1])
+			update_timestamps(m)
 
-			keep := now_or_later(words[1])
+			keep := now_or_later(m)
 
 			if keep {
 				fmt.Println("do the usual shit")
@@ -276,10 +277,10 @@ func handleRequest(conn connection, chans []chan string) {
 	conn.conn.Close()
 }
 
-func now_or_later(s string) bool {
-	m := str_to_map(s)
+func now_or_later(m map[string]int) bool {
 
 	if m[vm_num] != (VecTimestamp[vm_num] + 1) {
+		fmt.Println("im dying!")
 		return false
 	}
 	
@@ -292,9 +293,8 @@ func now_or_later(s string) bool {
 	// only update timestamps with a message if 
 	// you are going to use it
 	// TODO: this is hella dubious, so test it hard
-	update_timestamps(m)
+	//update_timestamps(m)
 	return true
-
 }
 
 func update_timestamps(m map[string]int) {
