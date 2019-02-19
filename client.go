@@ -185,11 +185,6 @@ func server(port string, connectionCount int, chans []chan string) {
 				}
 				conn.name = string(buf[:int(recLen)])
 				// Handle connections in a new goroutine.
-				if (vm_num == "03") && (start_flag == 0) {
-					start_flag = 1
-					time.Sleep(5*time.Second)
-					continue
-				}
 				go handleRequest(conn, chans)
 		}
 		wg.Done()
@@ -226,7 +221,8 @@ func handleRequest(conn connection, chans []chan string) {
 		// especially for own messages
 
 		// will have to figure out where we need to query the hold back queue messages at
-		keep := true
+		keep := false
+		this_is_mine := false
 
 		if (!isMyOld && !isOld) {
 			// this message has never been sent by me
@@ -242,7 +238,7 @@ func handleRequest(conn connection, chans []chan string) {
 			//keep = now_or_later(m)
 
 			if keep {
-				fmt.Println("do the usual shit")
+				// fmt.Println("do the usual shit")
 				// I have decided to keep this message
 				// so I will have to print it and add it to my list of all messages
 				// received for the first time hence send to all other servers
@@ -265,7 +261,11 @@ func handleRequest(conn connection, chans []chan string) {
 			}
 		}
 
-		if (!isOld && keep) {
+		if (!isOld && isMyOld) {
+			this_is_mine = true
+		}
+
+		if (!isOld && (keep || this_is_mine)) {
 			// this is a message I just sent
 			// or a message that should be kept that was delivered by another process
 		
@@ -302,8 +302,10 @@ func deliver_buf_msgs(chans []chan string) {
 				c <- text
 			}
 			msg := strings.Join(words[3:], " ")	
+			fmt.Println("This message was delivered from inside the buf queue")
 			fmt.Print(words[1] + " ")
 			fmt.Printf("%v\n", msg);
+			fmt.Println("The above message was delivered from inside the buf queue")
 			allMessages[words[0]] = text	
 			delivered_keys = append(delivered_keys, key)
 		}	
