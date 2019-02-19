@@ -44,8 +44,10 @@ var ownMessages map[string]string = make(map[string]string)
 // initialize timestamp to all zeros
 var VecTimestamp map[string]int
 var vm_num string
+var start_flag int
 
 func main() {
+		start_flag = 0
 		arguments := os.Args[1:]
 		name = arguments[0]
 		port := arguments[1]
@@ -162,9 +164,6 @@ func server(port string, connectionCount int, chans []chan string) {
 		//fmt.Println("Listening on " + CONN_HOST + ":" + port)
 		for i :=0; i<connectionCount; i++ {
 
-				if (i == 2) {
-					time.Sleep(30*time.Second)
-				}
 				//fmt.Println("Entered  for loop to listen")
 				// Listen for an incoming connection.
 				conn := connection{}
@@ -209,10 +208,17 @@ func handleRequest(conn connection, chans []chan string) {
 		}
 		text := string(buf[:int(recLen)])
 		words := strings.Fields(text)
-		
+
+
+		if (vm_num == "03") && (words[2] == "01") && (start_flag == 0) {
+			start_flag = 1
+			time.Sleep(30*time.Second)
+		}
+	
 
 		// atomically checking and resending to everyone if new message
 		mutex.Lock()
+
 
 		_, isOld := allMessages[words[0]]
 		_, isMyOld := ownMessages[words[0]]
