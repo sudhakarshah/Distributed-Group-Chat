@@ -118,7 +118,7 @@ func main() {
 			VecTimestamp[vm_num]++
 			timestamp_str := map_to_str(VecTimestamp)
 
-			text = t + " " + timestamp_str + " " + name + ": " + text
+			text = t + " " + timestamp_str + " " + vm_num + " " + name + ": " + text
 			ownMessages[t] = text
 			for _, c := range chans {
 				c <- text
@@ -228,14 +228,16 @@ func handleRequest(conn connection, chans []chan string) {
 			// since this is the first time im receiving it, it is an event
 			// so i will increment by timestamp
 			m := str_to_map(words[1])
-			update_timestamps(m)
+			keep := now_or_later(m, words[2])
+			
 			//keep = now_or_later(m)
 
 			if keep {
-				//fmt.Println("do the usual shit")
+				fmt.Println("do the usual shit")
 				// I have decided to keep this message
 				// so I will have to print it and add it to my list of all messages
 				// received for the first time hence send to all other servers
+				update_timestamps(m, words[2])
 				words[1] = map_to_str(VecTimestamp) 
 				for _, c := range chans {
 					c <- text
@@ -267,41 +269,28 @@ func handleRequest(conn connection, chans []chan string) {
 	conn.conn.Close()
 }
 
-func now_or_later(m map[string]int) bool {
+func now_or_later(m map[string]int, rem_addr string) bool {
 
-	if VecTimestamp[vm_num] != (m[vm_num] + 1) {
+	if m[rem_addr] != (VecTimestamp[rem_addr] + 1) {
 		fmt.Println("basic check failed")
 		return false
 	}
 	
 	for key, val := range m {
-		if ((key != vm_num) && (val > VecTimestamp[key])) {
+		if ((key != rem_addr) && (val > VecTimestamp[key])) {
 			fmt.Println("something internal failed")
 			return false
 		} 
 	}
 
-	// only update timestamps with a message if 
-	// you are going to use it
-	// TODO: this is hella dubious, so test it hard
-	//update_timestamps(m)
 	return true
 }
 
-func update_timestamps(m map[string]int) {
+func update_timestamps(m map[string]int, rem_addr string) {
 	// update own value because receive is an event
-	VecTimestamp[vm_num]++
+	//VecTimestamp[vm_num]++
 
-	// update others values
-	for key, value := range m {
-		if (key == vm_num) {
-			continue
-		}
-
-		if VecTimestamp[key] < value {
-			VecTimestamp[key] = value
-		}
-	}
+	VecTimestamp[rem_addr] = m[rem_addr]
 }
 
 func client(conn net.Conn, c chan string) {
