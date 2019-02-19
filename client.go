@@ -41,6 +41,7 @@ var name string
 var wg sync.WaitGroup
 var allMessages map[string]string = make(map[string]string)
 var ownMessages map[string]string = make(map[string]string)
+var outOfOrderMsgs map[string]string = make(map[string]string)
 // initialize timestamp to all zeros
 var VecTimestamp map[string]int
 var vm_num string
@@ -203,8 +204,6 @@ func handleRequest(conn connection, chans []chan string) {
 	buf := make([]byte, 1024)
 	// Read the incoming connection into the buffer.
 
-
-
 	for {
 
 		recLen, err := conn.conn.Read(buf)
@@ -215,9 +214,6 @@ func handleRequest(conn connection, chans []chan string) {
 		}
 		text := string(buf[:int(recLen)])
 		words := strings.Fields(text)
-
-
-	
 
 		// atomically checking and resending to everyone if new message
 		mutex.Lock()
@@ -254,25 +250,30 @@ func handleRequest(conn connection, chans []chan string) {
 				words[1] = map_to_str(VecTimestamp) 
 				for _, c := range chans {
 					c <- text
-				}				
+				}	
+				
+				// check if any buffered messages can now be delivered
+				deliver_buf_msgs(chans)
 
 			} else {
 				fmt.Println("Put it away for later")
 				// I have decided to put it away for later
 				// I will deal with this later
 				// implement hold back queue
+				outOfOrderMsgs[words[0]] = text
+
 			}
 		}
 
-		if (!isOld) {
+		if (!isOld && keep) {
 			// this is a message I just sent
-			if keep {
-				msg := strings.Join(words[2:], " ")
-				fmt.Print(words[1] + " ")
-				fmt.Printf("%v\n", msg);
-			}
+			// or a message that should be kept that was delivered by another process
+		
+			msg := strings.Join(words[3:], " ")
+			fmt.Print(words[1] + " ")
+			fmt.Printf("%v\n", msg);
+		
 			allMessages[words[0]] = text
-
 		}
 
 		mutex.Unlock()	
@@ -281,6 +282,41 @@ func handleRequest(conn connection, chans []chan string) {
 	// Close the connection when you're done with it.
 	conn.conn.Close()
 }
+
+
+func deliver_buf_msgs(chans []chan string) {
+	// iterate over them and run them through the now_or_later func
+	// then execute the (!isOld && keep) condition to print these messages
+	// that have just been delivered
+
+	delivered_keys := make([]string, 0)
+	for key, text := range outOfOrderMsgs {
+		words := strings.Fields(text)
+		m := str_to_map(words[1])
+		keep := now_or_later(m, words[2])
+		if keep {
+			// yay, the buffered message can finally be delivered
+			update_timestamps(m, words[2])
+			words[1] = map_to_str(VecTimestamp) 
+			for _, c := range chans {
+				c <- text
+			}
+			msg := strings.Join(words[3:], " ")	
+			fmt.Print(words[1] + " ")
+			fmt.Printf("%v\n", msg);
+			allMessages[words[0]] = text	
+			delivered_keys = append(delivered_keys, key)
+		}	
+	}
+	if len(delivered_keys) > 0 {
+		// remove the msgs that got delivered and repeat the process
+		for _, key := range delivered_keys {
+			delete(outOfOrderMsgs, key)
+		} 
+		deliver_buf_msgs(chans)
+	} 
+}
+
 
 func now_or_later(m map[string]int, rem_addr string) bool {
 
