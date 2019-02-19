@@ -186,7 +186,8 @@ func server(port string, connectionCount int, chans []chan string) {
 				// Handle connections in a new goroutine.
 				if (vm_num == "03") && (start_flag == 0) {
 					start_flag = 1
-					time.Sleep(30*time.Second)
+					time.Sleep(5*time.Second)
+					continue
 				}
 				go handleRequest(conn, chans)
 		}
