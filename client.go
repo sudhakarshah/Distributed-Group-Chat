@@ -161,6 +161,10 @@ func server(port string, connectionCount int, chans []chan string) {
 		defer l.Close()
 		//fmt.Println("Listening on " + CONN_HOST + ":" + port)
 		for i :=0; i<connectionCount; i++ {
+
+				if (i == 2) {
+					time.Sleep(30*time.Second)
+				}
 				//fmt.Println("Entered  for loop to listen")
 				// Listen for an incoming connection.
 				conn := connection{}
