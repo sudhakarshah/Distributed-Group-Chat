@@ -233,7 +233,7 @@ func handleRequest(conn connection, chans []chan string) {
 			// since this is the first time im receiving it, it is an event
 			// so i will increment by timestamp
 			m := str_to_map(words[1])
-			keep := now_or_later(m, words[2])
+			keep = now_or_later(m, words[2])
 			
 			//keep = now_or_later(m)
 
