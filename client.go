@@ -213,6 +213,10 @@ func handleRequest(conn connection, chans []chan string) {
 		// atomically checking and resending to everyone if new message
 		mutex.Lock()
 
+		if (vm_num == "03") && (words[2] == "01") {
+			time.Sleep(10*time.Second)
+		}
+
 
 		_, isOld := allMessages[words[0]]
 		_, isMyOld := ownMessages[words[0]]
@@ -222,7 +226,7 @@ func handleRequest(conn connection, chans []chan string) {
 
 		// will have to figure out where we need to query the hold back queue messages at
 		keep := false
-		this_is_mine := false
+		// this_is_mine := false
 
 		if (!isMyOld && !isOld) {
 			// this message has never been sent by me
@@ -234,8 +238,7 @@ func handleRequest(conn connection, chans []chan string) {
 			// so i will increment by timestamp
 			m := str_to_map(words[1])
 			keep = now_or_later(m, words[2])
-			
-			//keep = now_or_later(m)
+	
 
 			if keep {
 				// fmt.Println("do the usual shit")
@@ -246,7 +249,12 @@ func handleRequest(conn connection, chans []chan string) {
 				words[1] = map_to_str(VecTimestamp) 
 				for _, c := range chans {
 					c <- text
-				}	
+				}
+				msg := strings.Join(words[3:], " ")
+				fmt.Print(words[1] + " ")
+				fmt.Printf("%v\n", msg);
+		
+				allMessages[words[0]] = text	
 				
 				// check if any buffered messages can now be delivered
 				deliver_buf_msgs(chans)
@@ -262,19 +270,23 @@ func handleRequest(conn connection, chans []chan string) {
 		}
 
 		if (!isOld && isMyOld) {
-			this_is_mine = true
-		}
-
-		if (!isOld && (keep || this_is_mine)) {
-			// this is a message I just sent
-			// or a message that should be kept that was delivered by another process
-		
 			msg := strings.Join(words[3:], " ")
 			fmt.Print(words[1] + " ")
 			fmt.Printf("%v\n", msg);
 		
 			allMessages[words[0]] = text
 		}
+
+		// if (!isOld && (keep || this_is_mine)) {
+		// 	// this is a message I just sent
+		// 	// or a message that should be kept that was delivered by another process
+		
+		// 	msg := strings.Join(words[3:], " ")
+		// 	fmt.Print(words[1] + " ")
+		// 	fmt.Printf("%v\n", msg);
+		
+		// 	allMessages[words[0]] = text
+		// }
 
 		mutex.Unlock()	
 	}
