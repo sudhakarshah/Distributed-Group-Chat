@@ -198,6 +198,11 @@ func handleRequest(conn connection, chans []chan string) {
 	buf := make([]byte, 1024)
 	// Read the incoming connection into the buffer.
 
+	if (vm_num == "03") && (start_flag == 0) {
+		start_flag = 1
+		time.Sleep(30*time.Second)
+	}
+
 	for {
 
 		recLen, err := conn.conn.Read(buf)
@@ -210,10 +215,6 @@ func handleRequest(conn connection, chans []chan string) {
 		words := strings.Fields(text)
 
 
-		if (vm_num == "03") && (words[2] == "01") && (start_flag == 0) {
-			start_flag = 1
-			time.Sleep(30*time.Second)
-		}
 	
 
 		// atomically checking and resending to everyone if new message
