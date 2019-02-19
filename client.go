@@ -184,6 +184,10 @@ func server(port string, connectionCount int, chans []chan string) {
 				}
 				conn.name = string(buf[:int(recLen)])
 				// Handle connections in a new goroutine.
+				if (vm_num == "03") && (start_flag == 0) {
+					start_flag = 1
+					time.Sleep(30*time.Second)
+				}
 				go handleRequest(conn, chans)
 		}
 		wg.Done()
@@ -198,10 +202,7 @@ func handleRequest(conn connection, chans []chan string) {
 	buf := make([]byte, 1024)
 	// Read the incoming connection into the buffer.
 
-	if (vm_num == "03") && (start_flag == 0) {
-		start_flag = 1
-		time.Sleep(30*time.Second)
-	}
+
 
 	for {
 
