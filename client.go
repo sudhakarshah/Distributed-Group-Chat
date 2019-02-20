@@ -20,20 +20,20 @@ const (
 
 type connection struct {
 	conn net.Conn
-	
+
 	// username (doesn't need to be unique)
 	name string
 }
 
 
 // fixed size array containing all the IP addresses
-var IpAddress = [...]string {"172.22.94.77", "172.22.156.69", "172.22.158.69", 
+var IpAddress = [...]string {"172.22.94.77", "172.22.156.69", "172.22.158.69",
 							"172.22.94.78", "172.22.156.70", "172.22.158.70",
 							"172.22.94.79", "172.22.156.71", "172.22.158.71",
 							"172.22.94.80"}
 
 // username
-var name string 													
+var name string
 var wg sync.WaitGroup
 
 // this is a string from "01", "02" .. "10" that is the vmNum of the host machine
@@ -61,7 +61,7 @@ func main() {
 		chans[i] = make(chan string)
 	}
 
-	
+
 	// starting server to accept connection from all other nodes
 	wg.Add(1)
 	go server(port, numberOfParticipants, chans)
@@ -98,23 +98,23 @@ func main() {
 			IpRing = IpRing.Prev()
 			IpRing.Unlink(1)
 			count++
-		} 
+		}
 		IpRing = IpRing.Next()
 	}
 	// ----------------------------RING--------------------------------------
-	
-	
-	// taking user input 
+
+
+	// taking user input
 	for {
 
 		reader := bufio.NewReader(os.Stdin)
 		text, _ := reader.ReadString('\n')
 
-		// Increment timestamp of current process 
+		// Increment timestamp of current process
 		VecTimestamp[vmNum]++
 		vecTimestampString := map_to_str(VecTimestamp)
 
-		
+
 		t := time.Now().String()
 		t = strings.Join(strings.Fields(t),"")
 
@@ -179,7 +179,7 @@ func handleRequest(conn connection, chans []chan string) {
 
 	// Make a buffer to hold incoming data.
 	buf := make([]byte, 1024)
-	
+
 
 	for {
 
@@ -208,55 +208,50 @@ func handleRequest(conn connection, chans []chan string) {
 
 
 		if (!isMyOld && !isOld) {
-			// this message has never been sent by me
-			// it has also never been sent by anyone else to me
-			// this is the first time i am actually receiveing this
+			// this message has not been sent by me
+			// this is the first time i am receiveing this message
 			// so i need to figure out if i should keep this message or put it in a holdback queue
 
-			deliverNow := verifyCausalOrdering(vecTsReceived, remoteVmNum)
-	
-			if deliverNow {
+			// received for the first time hence send to all other servers to make it reliable
+			for _, c := range chans {
+				c <- text
+			}
 
-				// received for the first time hence send to all other servers
-				for _, c := range chans {
-					c <- text
-				}
+			deliverNow := verifyCausalOrdering(vecTsReceived, remoteVmNum)
+
+			if deliverNow {
 
 				updateTimestamp(vecTsReceived, remoteVmNum)
 
 				// print the message to the screen
 				msg := strings.Join(words[3:], " ")
 				fmt.Printf("%v\n", msg);
-		
+
 				// add to running list of all messages received
-				allMessages[sequenceNum] = text	
-				
+				allMessages[sequenceNum] = text
+
 				// check if any buffered messages can now be delivered
 				// since the timestamps have been updated
-				deliverBufferedMsgs(chans)
+				deliverBufferedMsgs()
 
 			} else {
-
 				// fmt.Println("Violates causal ordering")
 				// add this message that violates causality to buffer queue
 				outOfOrderMsgs[words[0]] = text
-
 			}
 		}
 
 		if (!isOld && isMyOld) {
-
-			// this is a message i sent to myself
-			// it is also the first time i've sent it to myself
+			// this is a message i sent to ....myself received this... sent it to myself
 			// so print it and add it to list of all messages received
 
 			msg := strings.Join(words[3:], " ")
 			fmt.Printf("%v\n", msg);
-		
+
 			allMessages[words[0]] = text
 		}
 
-		mutex.Unlock()	
+		mutex.Unlock()
 	}
 
 	// Close the connection when you're done with it.
@@ -280,11 +275,11 @@ func client(conn net.Conn, c chan string) {
 
 
 
-// ################### CAUSALITY ENSURING HELPER FUNCTIONS ######################## // 
+// ################### CAUSALITY ENSURING HELPER FUNCTIONS ######################## //
 
 
 
-func deliverBufferedMsgs(chans []chan string) {
+func deliverBufferedMsgs() {
 	// iterate over them and run them through the verifyCausalOrdering func
 	// then execute the (!isOld && keep) condition to print these messages
 	// that have just been delivered
@@ -305,22 +300,17 @@ func deliverBufferedMsgs(chans []chan string) {
 
 		if deliverNow {
 
-			// yay, the buffered message can finally be delivered
-			for _, c := range chans {
-				c <- text
-			}
-
 			updateTimestamp(vecTsReceived, remoteVmNum)
 
 			// print the message to the screen
 			msg := strings.Join(words[3:], " ")
 			fmt.Printf("%v\n", msg);
-	
+
 			// add to running list of all messages received
-			allMessages[sequenceNum] = text	
+			allMessages[sequenceNum] = text
 
 			deliveredKeys = append(deliveredKeys, key)
-		}	
+		}
 	}
 
 	if len(deliveredKeys) > 0 {
@@ -328,10 +318,10 @@ func deliverBufferedMsgs(chans []chan string) {
 		// remove the msgs that got delivered and repeat the process
 		for _, key := range deliveredKeys {
 			delete(outOfOrderMsgs, key)
-		} 
+		}
 
-		deliverBufferedMsgs(chans)
-	} 
+		deliverBufferedMsgs()
+	}
 }
 
 
@@ -342,11 +332,11 @@ func verifyCausalOrdering(vecTsReceived map[string]int, remoteVmNum string) bool
 	if vecTsReceived[remoteVmNum] != (VecTimestamp[remoteVmNum] + 1) {
 		return false
 	}
-	
+
 	for key, val := range vecTsReceived {
 		if ((key != remoteVmNum) && (val > VecTimestamp[key])) {
 			return false
-		} 
+		}
 	}
 
 	return true
@@ -363,7 +353,7 @@ func updateTimestamp(vecTsReceived map[string]int, remoteVmNum string) {
 // ################### HELPER FUNCTIONS ######################## //
 
 
-// sets the global variable vmNum 
+// sets the global variable vmNum
 func setVmNumber() {
 
 	hostname, err := os.Hostname()
@@ -386,7 +376,7 @@ func map_to_str(m map[string]int) string {
 		fmt.Fprintf(b, "%s=%d;", key, val)
 	}
 	return b.String()
-} 
+}
 
 
 // converts a string to a map
@@ -401,4 +391,3 @@ func str_to_map(s string) map[string]int {
 	}
 	return m
 }
-
