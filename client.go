@@ -94,7 +94,7 @@ func main() {
 			addr, _ := net.LookupAddr(ip.(string))
 			remoteVmNum := addr[0][15:17]
 			VecTimestamp[remoteVmNum] = 0
-			go client(conn, chans[count])
+			go client(conn, chans[count], remoteVmNum)
 			IpRing = IpRing.Prev()
 			IpRing.Unlink(1)
 			count++
@@ -213,13 +213,18 @@ func handleRequest(conn connection, chans []chan string) {
 			// so i need to figure out if i should keep this message or put it in a holdback queue
 
 			// received for the first time hence send to all other servers to make it reliable
-			for _, c := range chans {
-				c <- text
-			}
+
+			
 
 			deliverNow := verifyCausalOrdering(vecTsReceived, remoteVmNum)
 
 			if deliverNow {
+
+				if !(((vmNum == "02") || (vmNum == "04")) && (remoteVmNum == "01")) {
+					for _, c := range chans {
+						c <- text
+					}
+				}
 
 				updateTimestamp(vecTsReceived, remoteVmNum)
 
@@ -232,12 +237,13 @@ func handleRequest(conn connection, chans []chan string) {
 
 				// check if any buffered messages can now be delivered
 				// since the timestamps have been updated
-				deliverBufferedMsgs()
+				deliverBufferedMsgs(chans)
 
 			} else {
 				// fmt.Println("Violates causal ordering")
 				// add this message that violates causality to buffer queue
 				outOfOrderMsgs[words[0]] = text
+				fmt.Println(outOfOrderMsgs)
 			}
 		}
 
@@ -260,7 +266,7 @@ func handleRequest(conn connection, chans []chan string) {
 
 
 
-func client(conn net.Conn, c chan string) {
+func client(conn net.Conn, c chan string, remoteVmNum string) {
 
 	fmt.Fprintf(conn, name)
 	for {
@@ -268,6 +274,9 @@ func client(conn net.Conn, c chan string) {
 		// read in input from stdin
 		// msg := message{name, text}
 		// send to socket
+		if (vmNum == "01" && ((remoteVmNum == "03") || (remoteVmNum == "04")))  {
+			time.Sleep(10*time.Second)
+		}
 		fmt.Fprintf(conn, text)
 	}
 
@@ -279,7 +288,7 @@ func client(conn net.Conn, c chan string) {
 
 
 
-func deliverBufferedMsgs() {
+func deliverBufferedMsgs(chans []chan string) {
 	// iterate over them and run them through the verifyCausalOrdering func
 	// then execute the (!isOld && keep) condition to print these messages
 	// that have just been delivered
@@ -299,6 +308,12 @@ func deliverBufferedMsgs() {
 		deliverNow := verifyCausalOrdering(vecTsReceived, remoteVmNum)
 
 		if deliverNow {
+
+			if !(((vmNum == "02") || (vmNum == "04")) && (remoteVmNum == "01")) {
+				for _, c := range chans {
+					c <- text
+				}
+			}
 
 			updateTimestamp(vecTsReceived, remoteVmNum)
 
@@ -320,7 +335,7 @@ func deliverBufferedMsgs() {
 			delete(outOfOrderMsgs, key)
 		}
 
-		deliverBufferedMsgs()
+		deliverBufferedMsgs(chans)
 	}
 }
 
