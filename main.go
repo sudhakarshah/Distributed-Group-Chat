@@ -94,7 +94,7 @@ func main() {
 			addr, _ := net.LookupAddr(ip.(string))
 			remoteVmNum := addr[0][15:17]
 			VecTimestamp[remoteVmNum] = 0
-			go client(conn, chans[count], remoteVmNum)
+			go client(conn, chans[count])
 			IpRing = IpRing.Prev()
 			IpRing.Unlink(1)
 			count++
@@ -213,17 +213,14 @@ func handleRequest(conn connection, chans []chan string) {
 			// so i need to figure out if i should keep this message or put it in a holdback queue
 
 			// received for the first time hence send to all other servers to make it reliable
-
 			
 
 			deliverNow := verifyCausalOrdering(vecTsReceived, remoteVmNum)
 
 			if deliverNow {
 
-				if !(((vmNum == "02") || (vmNum == "04")) && (remoteVmNum == "01")) {
-					for _, c := range chans {
-						c <- text
-					}
+				for _, c := range chans {
+					c <- text
 				}
 
 				updateTimestamp(vecTsReceived, remoteVmNum)
@@ -243,7 +240,6 @@ func handleRequest(conn connection, chans []chan string) {
 				// fmt.Println("Violates causal ordering")
 				// add this message that violates causality to buffer queue
 				outOfOrderMsgs[words[0]] = text
-				fmt.Println(outOfOrderMsgs)
 			}
 		}
 
@@ -266,7 +262,7 @@ func handleRequest(conn connection, chans []chan string) {
 
 
 
-func client(conn net.Conn, c chan string, remoteVmNum string) {
+func client(conn net.Conn, c chan string) {
 
 	fmt.Fprintf(conn, name)
 	for {
@@ -274,9 +270,6 @@ func client(conn net.Conn, c chan string, remoteVmNum string) {
 		// read in input from stdin
 		// msg := message{name, text}
 		// send to socket
-		if (vmNum == "01" && ((remoteVmNum == "03") || (remoteVmNum == "04")))  {
-			time.Sleep(10*time.Second)
-		}
 		fmt.Fprintf(conn, text)
 	}
 
@@ -309,10 +302,8 @@ func deliverBufferedMsgs(chans []chan string) {
 
 		if deliverNow {
 
-			if !(((vmNum == "02") || (vmNum == "04")) && (remoteVmNum == "01")) {
-				for _, c := range chans {
-					c <- text
-				}
+			for _, c := range chans {
+				c <- text
 			}
 
 			updateTimestamp(vecTsReceived, remoteVmNum)
